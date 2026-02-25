@@ -8,10 +8,10 @@ export default async function HomePage() {
   // Fetch gifts directly from table
   const { data: gifts, error } = await supabase
     .from('gifts')
-    .select('*')
+    .select('id, name, price, image_url, purchased, purchaser_name, created_at')
     .order('name')
   
-  console.log('[v0] Gifts fetched:', { count: gifts?.length || 0, error })
+  console.log('[v0] Gifts fetched:', { count: gifts?.length || 0, error: error?.message || 'none' })
 
   return (
     <div className="min-h-screen bg-background">
