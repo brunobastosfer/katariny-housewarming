@@ -15,8 +15,9 @@ type Gift = {
   name: string
   price: number
   image_url: string | null
-  purchased_by: string | null
-  purchased_at: string | null
+  purchased: boolean
+  purchaser_name: string | null
+  created_at: string | null
 }
 
 type Props = {
