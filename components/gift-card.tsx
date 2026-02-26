@@ -2,14 +2,20 @@
 
 import { Button } from '@/components/ui/button'
 
+type Purchase = {
+  id: string
+  purchaser_name: string
+  payment_method: string
+  created_at: string
+}
+
 type Gift = {
   id: string
   name: string
   price: number
   image_url: string | null
-  purchased: boolean
-  purchaser_name: string | null
   created_at: string | null
+  gift_purchases?: Purchase[]
 }
 
 type Props = {
@@ -18,8 +24,9 @@ type Props = {
 }
 
 export function GiftCard({ gift, onSelect }: Props) {
-  const isPurchased = gift.purchased === true && !!gift.purchaser_name
   const price = Number(gift.price) || 0
+  const purchases = gift.gift_purchases || []
+  const hasPurchases = purchases.length > 0
 
   return (
     <div className="group bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-md border-2 border-border hover:border-primary/50 transition-all hover:shadow-xl flex flex-col">
@@ -43,10 +50,10 @@ export function GiftCard({ gift, onSelect }: Props) {
             </svg>
           </div>
         )}
-        {isPurchased && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-primary text-primary-foreground px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold text-xs sm:text-sm shadow-lg">
-              Ja Presenteado
+        {hasPurchases && (
+          <div className="absolute top-2 right-2">
+            <div className="bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-semibold shadow">
+              {purchases.length}x presenteado
             </div>
           </div>
         )}
@@ -59,21 +66,26 @@ export function GiftCard({ gift, onSelect }: Props) {
         <p className="text-xl sm:text-2xl font-bold text-primary mb-3 sm:mb-4">
           R$ {price.toFixed(2)}
         </p>
-        
-        {isPurchased ? (
-          <div className="text-center py-2 mt-auto">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Presenteado por <span className="font-semibold text-foreground">{gift.purchaser_name}</span>
-            </p>
+
+        {hasPurchases && (
+          <div className="mb-3 space-y-1">
+            {purchases.map((p) => (
+              <p key={p.id} className="text-xs text-muted-foreground flex items-center gap-1">
+                <svg className="w-3 h-3 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {p.purchaser_name}
+              </p>
+            ))}
           </div>
-        ) : (
-          <Button
-            onClick={onSelect}
-            className="w-full py-4 sm:py-5 md:py-6 font-semibold text-sm sm:text-base group-hover:scale-105 transition-transform mt-auto"
-          >
-            Presentear
-          </Button>
         )}
+
+        <Button
+          onClick={onSelect}
+          className="w-full py-4 sm:py-5 md:py-6 font-semibold text-sm sm:text-base group-hover:scale-105 transition-transform mt-auto"
+        >
+          Presentear
+        </Button>
       </div>
     </div>
   )
