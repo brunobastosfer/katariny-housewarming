@@ -21,6 +21,8 @@ type Props = {
 export function GiftCard({ gift, onSelect }: Props) {
   const isPurchased = gift.purchased === true && !!gift.purchaser_name
   const price = Number(gift.price) || 0
+  
+  console.log('[v0] GiftCard rendering:', { name: gift.name, price, isPurchased, purchased: gift.purchased, purchaser_name: gift.purchaser_name, hasOnSelect: typeof onSelect })
 
   return (
     <div className="group bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-md border-2 border-border hover:border-primary/50 transition-all hover:shadow-xl flex flex-col">
