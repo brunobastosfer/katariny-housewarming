@@ -1,17 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { GiftList } from '@/components/gift-list'
 import { RsvpForm } from '@/components/rsvp-form'
 
-export default async function HomePage() {
-  const supabase = await createClient()
-  
-  // Fetch gifts directly from table
-  const { data: gifts, error } = await supabase
-    .from('gifts')
-    .select('id, name, price, image_url, purchased, purchaser_name, created_at')
-    .order('name')
-  
-  console.log('[v0] Gifts fetched:', { count: gifts?.length || 0, error: error?.message || 'none' })
+export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +78,7 @@ export default async function HomePage() {
             </p>
           </div>
           
-          <GiftList gifts={gifts || []} />
+          <GiftList />
         </div>
       </div>
 

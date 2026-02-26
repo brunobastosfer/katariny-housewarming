@@ -114,7 +114,7 @@ export function PaymentModal({ gift, onClose }: Props) {
         console.error('[v0] Error generating QR code:', err)
       }
     } else {
-      // Redirect to Mercado Pago checkout (opens in new tab to avoid CSP issues)
+      setStep('card')
       initMercadoPago()
     }
   }
