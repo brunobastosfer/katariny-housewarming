@@ -10,10 +10,10 @@ export async function GET() {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
 
-    // First try with gift_purchases join
+    // Fetch gifts without detailed purchases info for homepage display
     const { data: gifts, error } = await supabase
       .from('gifts')
-      .select('id, name, price, image_url, created_at, gift_purchases(id, purchaser_name, payment_method, created_at)')
+      .select('id, name, price, image_url, created_at, gift_purchases(id)')
       .order('name')
       .abortSignal(controller.signal)
 

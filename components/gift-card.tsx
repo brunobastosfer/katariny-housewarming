@@ -67,19 +67,6 @@ export function GiftCard({ gift, onSelect }: Props) {
           R$ {price.toFixed(2)}
         </p>
 
-        {hasPurchases && (
-          <div className="mb-3 space-y-1">
-            {purchases.map((p) => (
-              <p key={p.id} className="text-xs text-muted-foreground flex items-center gap-1">
-                <svg className="w-3 h-3 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                {p.purchaser_name}
-              </p>
-            ))}
-          </div>
-        )}
-
         <Button
           onClick={onSelect}
           className="w-full py-4 sm:py-5 md:py-6 font-semibold text-sm sm:text-base group-hover:scale-105 transition-transform mt-auto"
