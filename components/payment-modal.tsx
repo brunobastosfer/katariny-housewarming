@@ -6,18 +6,23 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
 import QRCode from 'qrcode'
 import Image from 'next/image'
+
+type Purchase = {
+  id: string
+  purchaser_name: string
+  payment_method: string
+  created_at: string
+}
 
 type Gift = {
   id: string
   name: string
   price: number
   image_url: string | null
-  purchased: boolean
-  purchaser_name: string | null
   created_at: string | null
+  gift_purchases?: Purchase[]
 }
 
 type Props = {
@@ -99,7 +104,6 @@ export function PaymentModal({ gift, onClose }: Props) {
     
     if (method === 'pix') {
       const pixPayload = generatePixPayload()
-      console.log('[v0] PIX Payload generated:', pixPayload)
       setPixCode(pixPayload)
       
       try {
@@ -121,7 +125,6 @@ export function PaymentModal({ gift, onClose }: Props) {
 
   const initMercadoPago = async () => {
     setLoading(true)
-    console.log('[v0] Creating Mercado Pago preference for:', gift.name)
 
     try {
       const response = await fetch('/api/mercadopago/create-preference', {
@@ -140,8 +143,6 @@ export function PaymentModal({ gift, onClose }: Props) {
       }
 
       const data = await response.json()
-      console.log('[v0] Preference created:', data.preferenceId, 'initPoint:', data.initPoint)
-
       // Open Mercado Pago checkout in new tab to avoid CSP iframe blocking
       window.open(data.initPoint, '_blank')
     } catch (error) {
@@ -155,31 +156,32 @@ export function PaymentModal({ gift, onClose }: Props) {
 
   const handlePixConfirmation = async () => {
     setLoading(true)
-    const supabase = createClient()
-
-    console.log('[v0] Confirming PIX payment for gift:', gift.id, 'buyer:', buyerName)
-
-    const { data, error } = await supabase
-      .from('gifts')
-      .update({
-        purchased: true,
-        purchaser_name: buyerName,
+    try {
+      const res = await fetch('/api/purchases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gift_id: gift.id,
+          purchaser_name: buyerName,
+          payment_method: 'pix',
+        }),
       })
-      .eq('id', gift.id)
-      .select()
 
-    console.log('[v0] Update response:', { data, error })
-    setLoading(false)
+      const result = await res.json()
 
-    if (error) {
-      console.error('[v0] Error updating gift:', error)
-      alert('Erro ao confirmar pagamento. Por favor, tente novamente.')
-    } else {
-      setStep('success')
-      setTimeout(() => {
-        onClose()
-        window.location.reload()
-      }, 3000)
+      if (!res.ok || result.error) {
+        alert('Erro ao confirmar pagamento. Por favor, tente novamente.')
+      } else {
+        setStep('success')
+        setTimeout(() => {
+          onClose()
+          window.location.reload()
+        }, 3000)
+      }
+    } catch {
+      alert('Erro de conexão. Por favor, tente novamente.')
+    } finally {
+      setLoading(false)
     }
   }
 
