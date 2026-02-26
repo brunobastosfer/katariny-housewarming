@@ -39,35 +39,67 @@ export function PaymentModal({ gift, onClose }: Props) {
     setStep('method')
   }
 
+  // Helper: build a TLV field (Tag-Length-Value) per EMV spec
+  const tlv = (tag: string, value: string): string => {
+    const len = value.length.toString().padStart(2, '0')
+    return `${tag}${len}${value}`
+  }
+
+  // CRC16-CCITT calculation for PIX
+  const calculateCRC16 = (str: string): string => {
+    let crc = 0xFFFF
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8
+      for (let j = 0; j < 8; j++) {
+        if ((crc & 0x8000) !== 0) {
+          crc = ((crc << 1) ^ 0x1021) & 0xFFFF
+        } else {
+          crc = (crc << 1) & 0xFFFF
+        }
+      }
+    }
+    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0')
+  }
+
+  const generatePixPayload = (): string => {
+    const pixKey = 'katariny_fernandes@hotmail.com'
+    const price = Number(gift.price) || 0
+    const amount = price.toFixed(2)
+    const merchantName = 'Katariny Fernandes'
+    const merchantCity = 'SAO PAULO'
+    const txid = 'CHA' + Date.now().toString().slice(-8)
+
+    // Field 26: Merchant Account Information
+    const gui = tlv('00', 'br.gov.bcb.pix')     // GUI
+    const key = tlv('01', pixKey)                 // Chave PIX
+    const merchantAccountInfo = tlv('26', gui + key)
+
+    // Build full payload without CRC
+    const payload =
+      tlv('00', '01') +           // Payload Format Indicator
+      tlv('01', '12') +           // Point of Initiation Method (12 = one-time)
+      merchantAccountInfo +       // Merchant Account Information
+      tlv('52', '0000') +         // Merchant Category Code
+      tlv('53', '986') +          // Transaction Currency (BRL)
+      tlv('54', amount) +         // Transaction Amount
+      tlv('58', 'BR') +           // Country Code
+      tlv('59', merchantName) +   // Merchant Name
+      tlv('60', merchantCity) +   // Merchant City
+      tlv('62', tlv('05', txid))  // Additional Data (txid)
+
+    // Append CRC placeholder and calculate
+    const payloadWithCrcTag = payload + '6304'
+    const crc = calculateCRC16(payloadWithCrcTag)
+
+    return payloadWithCrcTag + crc
+  }
+
   const handleMethodSelect = async (method: 'pix' | 'card') => {
     setPaymentMethod(method)
     
     if (method === 'pix') {
-      // Generate PIX QR Code with proper format
-      const pixKey = 'katariny_fernandes@hotmail.com'
-      const amount = gift.price.toFixed(2)
-      const merchantName = 'Katariny e Ryanne'
-      const merchantCity = 'SAO PAULO'
-      const txid = 'CHA' + Date.now().toString().slice(-10)
-      
-      // Build PIX payload following EMV specification
-      const payloadElements = [
-        '00020101', // Payload Format Indicator
-        '010212', // Point of Initiation Method (dynamic)
-        '26' + (22 + pixKey.length).toString().padStart(2, '0') + '0014br.gov.bcb.pix01' + pixKey.length.toString().padStart(2, '0') + pixKey,
-        '52040000', // Merchant Category Code
-        '5303986', // Transaction Currency (986 = BRL)
-        '54' + amount.length.toString().padStart(2, '0') + amount,
-        '5802BR', // Country Code
-        '59' + merchantName.length.toString().padStart(2, '0') + merchantName,
-        '60' + merchantCity.length.toString().padStart(2, '0') + merchantCity,
-        '62' + (4 + txid.length).toString().padStart(2, '0') + '05' + txid.length.toString().padStart(2, '0') + txid
-      ]
-      
-      const payload = payloadElements.join('')
-      const crc = calculateCRC16(payload + '6304')
-      const pixPayload = payload + '6304' + crc
-      
+      const pixPayload = generatePixPayload()
+      console.log('[v0] PIX Payload generated:', pixPayload)
       setPixCode(pixPayload)
       
       try {
@@ -82,21 +114,9 @@ export function PaymentModal({ gift, onClose }: Props) {
         console.error('[v0] Error generating QR code:', err)
       }
     } else {
-      // Redirect to Mercado Pago checkout
-      setStep('card')
+      // Redirect to Mercado Pago checkout (opens in new tab to avoid CSP issues)
       initMercadoPago()
     }
-  }
-
-  const calculateCRC16 = (str: string): string => {
-    let crc = 0xFFFF
-    for (let i = 0; i < str.length; i++) {
-      crc ^= str.charCodeAt(i) << 8
-      for (let j = 0; j < 8; j++) {
-        crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1
-      }
-    }
-    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0')
   }
 
   const initMercadoPago = async () => {
@@ -120,10 +140,10 @@ export function PaymentModal({ gift, onClose }: Props) {
       }
 
       const data = await response.json()
-      console.log('[v0] Preference created:', data.preferenceId)
+      console.log('[v0] Preference created:', data.preferenceId, 'initPoint:', data.initPoint)
 
-      // Redirect to Mercado Pago checkout
-      window.location.href = data.initPoint
+      // Open Mercado Pago checkout in new tab to avoid CSP iframe blocking
+      window.open(data.initPoint, '_blank')
     } catch (error) {
       console.error('[v0] Error creating preference:', error)
       alert('Erro ao iniciar pagamento. Por favor, tente novamente.')
@@ -208,7 +228,7 @@ export function PaymentModal({ gift, onClose }: Props) {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">{gift.name}</h3>
-                <p className="text-2xl font-bold text-primary">R$ {gift.price.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-primary">R$ {Number(gift.price).toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -338,7 +358,7 @@ export function PaymentModal({ gift, onClose }: Props) {
                 <div className="mt-4 p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
                   <p className="text-sm text-muted-foreground mb-1">Valor</p>
                   <p className="text-3xl font-bold text-primary">
-                    R$ {gift.price.toFixed(2)}
+                    R$ {Number(gift.price).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -376,7 +396,7 @@ export function PaymentModal({ gift, onClose }: Props) {
                     Preparando pagamento...
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Você será redirecionado para o Mercado Pago
+                    O Mercado Pago abrira em uma nova aba
                   </p>
                 </div>
               ) : (
@@ -388,24 +408,31 @@ export function PaymentModal({ gift, onClose }: Props) {
                       </svg>
                     </div>
                     <h3 className="font-serif text-xl font-bold text-foreground mb-2">
-                      Redirecionando para Mercado Pago
+                      Mercado Pago
                     </h3>
                     <p className="text-muted-foreground mb-4">
-                      Você está sendo redirecionado para a plataforma segura do Mercado Pago para finalizar seu pagamento.
+                      Uma nova aba foi aberta com o checkout do Mercado Pago. Finalize o pagamento por la.
                     </p>
                     <div className="bg-background rounded-lg p-4 border border-primary/10">
                       <p className="text-sm text-muted-foreground mb-1">Presente</p>
                       <p className="font-semibold text-foreground mb-3">{gift.name}</p>
-                      <p className="text-2xl font-bold text-primary">R$ {gift.price.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-primary">R$ {Number(gift.price).toFixed(2)}</p>
                     </div>
                   </div>
+                  
+                  <Button
+                    onClick={() => initMercadoPago()}
+                    className="w-full py-4"
+                  >
+                    Abrir Mercado Pago novamente
+                  </Button>
                   
                   <Button
                     variant="outline"
                     onClick={() => setStep('method')}
                     className="w-full py-4"
                   >
-                    Cancelar
+                    Voltar
                   </Button>
                 </>
               )}
