@@ -1,24 +1,34 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const supabase = await createClient()
+
+    // Use AbortController to timeout the request after 8 seconds
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+
     const { data: gifts, error } = await supabase
       .from('gifts')
       .select('id, name, price, image_url, purchased, purchaser_name, created_at')
       .order('name')
+      .abortSignal(controller.signal)
+
+    clearTimeout(timeout)
 
     if (error) {
-      console.error('[v0] API gifts error:', error.message)
-      // Always return an array so the client never crashes on .length
       return NextResponse.json([], { status: 200 })
     }
 
-    return NextResponse.json(Array.isArray(gifts) ? gifts : [])
+    return NextResponse.json(Array.isArray(gifts) ? gifts : [], {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error('[v0] API gifts exception:', message)
     return NextResponse.json([], { status: 200 })
   }
 }
