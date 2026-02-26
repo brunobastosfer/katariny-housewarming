@@ -1,5 +1,5 @@
 import React from "react"
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, Lato } from 'next/font/google'
 
 import './globals.css'
@@ -7,19 +7,29 @@ import './globals.css'
 const cormorant = Cormorant_Garamond({ 
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-cormorant'
+  variable: '--font-cormorant',
+  display: 'swap',
+  preload: true,
 })
 
 const lato = Lato({ 
   subsets: ['latin'],
   weight: ['400', '700'],
-  variable: '--font-lato'
+  variable: '--font-lato',
+  display: 'swap',
+  preload: true,
 })
 
 export const metadata: Metadata = {
   title: 'Chá de Casa Nova - Katariny & Ryanne',
   description: 'Celebre conosco essa nova fase das nossas vidas',
   generator: 'v0.app',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#ffffff',
 }
 
 export default function RootLayout({
