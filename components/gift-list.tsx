@@ -10,8 +10,9 @@ type Gift = {
   name: string
   price: number
   image_url: string | null
-  purchased_by: string | null
-  purchased_at: string | null
+  purchased: boolean
+  purchaser_name: string | null
+  created_at: string | null
 }
 
 type Props = {
@@ -20,6 +21,8 @@ type Props = {
 
 export function GiftList({ gifts }: Props) {
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null)
+  
+  console.log('[v0] GiftList received:', gifts.length, 'gifts. First gift:', gifts[0])
 
   return (
     <>

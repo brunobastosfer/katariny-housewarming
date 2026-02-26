@@ -5,15 +5,13 @@ import { RsvpForm } from '@/components/rsvp-form'
 export default async function HomePage() {
   const supabase = await createClient()
   
-  // Fetch gifts using RPC function to bypass PostgREST cache
-  const { data: giftsData, error } = await supabase.rpc('get_gifts')
+  // Fetch gifts directly from table
+  const { data: gifts, error } = await supabase
+    .from('gifts')
+    .select('id, name, price, image_url, purchased, purchaser_name, created_at')
+    .order('name')
   
-  console.log('[v0] RPC response:', { giftsData, error })
-  
-  // Parse the JSONB response
-  const gifts = giftsData ? (Array.isArray(giftsData) ? giftsData : []) : []
-  
-  console.log('[v0] Parsed gifts:', gifts.length, 'items')
+  console.log('[v0] Gifts fetched:', { count: gifts?.length || 0, error: error?.message || 'none' })
 
   return (
     <div className="min-h-screen bg-background">

@@ -19,10 +19,13 @@ type Props = {
 }
 
 export function GiftCard({ gift, onSelect }: Props) {
-  const isPurchased = gift.purchased && !!gift.purchaser_name
+  const isPurchased = gift.purchased === true && !!gift.purchaser_name
+  const price = Number(gift.price) || 0
+  
+  console.log('[v0] GiftCard rendering:', { name: gift.name, price, isPurchased, purchased: gift.purchased, purchaser_name: gift.purchaser_name, hasOnSelect: typeof onSelect })
 
   return (
-    <div className="group bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-md border-2 border-border hover:border-primary/50 transition-all hover:shadow-xl">
+    <div className="group bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-md border-2 border-border hover:border-primary/50 transition-all hover:shadow-xl flex flex-col">
       <div className="relative aspect-square bg-muted">
         {gift.image_url ? (
           <Image
@@ -41,22 +44,22 @@ export function GiftCard({ gift, onSelect }: Props) {
         {isPurchased && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-primary text-primary-foreground px-4 sm:px-6 py-2 sm:py-3 rounded-full font-semibold text-xs sm:text-sm shadow-lg">
-              Já Presenteado
+              Ja Presenteado
             </div>
           </div>
         )}
       </div>
       
-      <div className="p-4 sm:p-5 md:p-6 flex flex-col h-full">
-        <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-foreground mb-2 line-clamp-2 flex-grow">
+      <div className="p-4 sm:p-5 md:p-6 flex flex-col flex-1">
+        <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold text-foreground mb-2 line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem]">
           {gift.name}
         </h3>
         <p className="text-xl sm:text-2xl font-bold text-primary mb-3 sm:mb-4">
-          R$ {gift.price.toFixed(2)}
+          R$ {price.toFixed(2)}
         </p>
         
         {isPurchased ? (
-          <div className="text-center py-2">
+          <div className="text-center py-2 mt-auto">
             <p className="text-xs sm:text-sm text-muted-foreground">
               Presenteado por <span className="font-semibold text-foreground">{gift.purchaser_name}</span>
             </p>
