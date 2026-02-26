@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 
 type Gift = {
@@ -21,18 +20,21 @@ type Props = {
 export function GiftCard({ gift, onSelect }: Props) {
   const isPurchased = gift.purchased === true && !!gift.purchaser_name
   const price = Number(gift.price) || 0
-  
-  console.log('[v0] GiftCard rendering:', { name: gift.name, price, isPurchased, purchased: gift.purchased, purchaser_name: gift.purchaser_name, hasOnSelect: typeof onSelect })
 
   return (
     <div className="group bg-card rounded-xl sm:rounded-2xl overflow-hidden shadow-md border-2 border-border hover:border-primary/50 transition-all hover:shadow-xl flex flex-col">
-      <div className="relative aspect-square bg-muted">
+      <div className="relative aspect-square bg-muted overflow-hidden">
         {gift.image_url ? (
-          <Image
-            src={gift.image_url || "/placeholder.svg"}
+          <img
+            src={gift.image_url}
             alt={gift.name}
-            fill
-            className="object-cover"
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+              target.parentElement?.classList.add('flex', 'items-center', 'justify-center')
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

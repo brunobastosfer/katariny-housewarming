@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { GiftCard } from './gift-card'
 import { PaymentModal } from './payment-modal'
 
@@ -21,8 +20,6 @@ type Props = {
 
 export function GiftList({ gifts }: Props) {
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null)
-  
-  console.log('[v0] GiftList received:', gifts.length, 'gifts. First gift:', gifts[0])
 
   return (
     <>
