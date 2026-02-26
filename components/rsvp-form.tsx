@@ -6,7 +6,6 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
 
 export function RsvpForm() {
   const [name, setName] = useState('')
@@ -18,39 +17,40 @@ export function RsvpForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('[v0] RSVP form submitted', { name, status })
-    
-    if (!name.trim() || !status) {
-      console.log('[v0] Validation failed - missing fields')
-      return
-    }
+    if (!name.trim() || !status) return
 
     setLoading(true)
-    const supabase = createClient()
 
     const rsvpStatus = status === 'attending' ? 'confirmed' : 'declined'
-    console.log('[v0] Inserting RSVP:', { name: name.trim(), status: rsvpStatus, companionName: hasCompanion ? companionName.trim() : null })
-    const { data, error } = await supabase.from('rsvps').insert({
-      name: name.trim(),
-      status: rsvpStatus,
-      companion_name: hasCompanion && companionName.trim() ? companionName.trim() : null,
-    }).select()
 
-    console.log('[v0] Supabase response:', { data, error })
-    setLoading(false)
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          status: rsvpStatus,
+          companion_name: hasCompanion && companionName.trim() ? companionName.trim() : null,
+        }),
+      })
 
-    if (error) {
-      console.error('[v0] Error submitting RSVP:', error)
-      alert('Erro ao confirmar presença. Por favor, tente novamente.')
-    } else {
-      console.log('[v0] RSVP submitted successfully')
-      setSubmitted(true)
-      setName('')
-      setStatus(null)
-      setHasCompanion(false)
-      setCompanionName('')
-      setTimeout(() => setSubmitted(false), 5000)
+      const result = await res.json()
+
+      if (!res.ok || result.error) {
+        alert('Erro ao confirmar presença. Por favor, tente novamente.')
+      } else {
+        setSubmitted(true)
+        setName('')
+        setStatus(null)
+        setHasCompanion(false)
+        setCompanionName('')
+        setTimeout(() => setSubmitted(false), 5000)
+      }
+    } catch {
+      alert('Erro de conexão. Por favor, tente novamente.')
     }
+
+    setLoading(false)
   }
 
   return (
