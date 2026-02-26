@@ -34,14 +34,10 @@ export async function GET() {
 
       // Attach empty purchases array so the UI works the same
       const giftsWithEmpty = (giftsOnly || []).map((g) => ({ ...g, gift_purchases: [] }))
-      return NextResponse.json(giftsWithEmpty, {
-        headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
-      })
+      return NextResponse.json(giftsWithEmpty)
     }
 
-    return NextResponse.json(Array.isArray(gifts) ? gifts : [], {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
-    })
+    return NextResponse.json(Array.isArray(gifts) ? gifts : [])
   } catch (err) {
     console.log('[v0] gifts API exception:', err)
     return NextResponse.json([], { status: 200 })
