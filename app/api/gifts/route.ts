@@ -11,13 +11,14 @@ export async function GET() {
 
     if (error) {
       console.error('[v0] API gifts error:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      // Always return an array so the client never crashes on .length
+      return NextResponse.json([], { status: 200 })
     }
 
-    return NextResponse.json(gifts || [])
+    return NextResponse.json(Array.isArray(gifts) ? gifts : [])
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     console.error('[v0] API gifts exception:', message)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json([], { status: 200 })
   }
 }

@@ -15,7 +15,10 @@ type Gift = {
   created_at: string | null
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) =>
+  fetch(url)
+    .then((r) => r.json())
+    .then((data) => (Array.isArray(data) ? data : []))
 
 export function GiftList() {
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null)
