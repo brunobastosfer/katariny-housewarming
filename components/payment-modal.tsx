@@ -127,6 +127,25 @@ export function PaymentModal({ gift, onClose }: Props) {
     setLoading(true)
 
     try {
+      // First, register the purchase immediately (before opening MP checkout)
+      const purchaseRes = await fetch('/api/purchases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gift_id: gift.id,
+          purchaser_name: buyerName,
+          payment_method: 'card',
+        }),
+      })
+
+      const purchaseResult = await purchaseRes.json()
+      if (!purchaseRes.ok || purchaseResult.error) {
+        alert('Erro ao registrar compra. Por favor, tente novamente.')
+        setLoading(false)
+        return
+      }
+
+      // Then create MP preference for checkout
       const response = await fetch('/api/mercadopago/create-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,10 +162,17 @@ export function PaymentModal({ gift, onClose }: Props) {
       }
 
       const data = await response.json()
-      // Open Mercado Pago checkout in new tab to avoid CSP iframe blocking
+      // Open Mercado Pago checkout in new tab
       window.open(data.initPoint, '_blank')
+      
+      // Show success and reload after a short delay
+      setStep('success')
+      setTimeout(() => {
+        onClose()
+        window.location.reload()
+      }, 3000)
     } catch (error) {
-      console.error('[v0] Error creating preference:', error)
+      console.error('[v0] Error with Mercado Pago:', error)
       alert('Erro ao iniciar pagamento. Por favor, tente novamente.')
       setStep('method')
     } finally {
